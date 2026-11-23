@@ -18,7 +18,7 @@ TABLES = ["Bank", "MasterAccount", "Customer", "customerPhoneNumber", "customerE
           "CustomerBank", "VirtualIBAN", "LedgerAccount", "Payment", "LedgerEntry",
           "PaymentStatusHistory"]
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=".", static_folder=".", static_url_path="/static")
 app.secret_key = os.environ.get("SECRET_KEY", "inde513-demo")
 
 
