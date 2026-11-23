@@ -1,0 +1,53 @@
+{% extends "base.html" %}{% block title %}Payment {{ p.paymentId }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('payments') }}">← Payments</a></p>
+<h1>Payment #{{ p.paymentId }} <span class="pill {{ p.status }}" style="vertical-align:middle">{{ p.status }}</span></h1>
+<p class="sub">{{ p.amount|money(p.currency) }} from {{ p.senderName }}</p>
+
+<div class="grid g2">
+  <div class="card">
+    <strong>Routing</strong>
+    <dl class="kv" style="margin-top:12px">
+      <dt>Sender</dt><dd>{{ p.senderName }}</dd>
+      <dt>Note</dt><dd>{{ p.senderNote or '-' }}</dd>
+      <dt>Amount</dt><dd><strong>{{ p.amount|money(p.currency) }}</strong></dd>
+      <dt>Virtual IBAN</dt><dd class="mono">{{ p.IBAN }} <span class="tag">#{{ p.vIbanId }}</span></dd>
+      <dt>Master account</dt><dd class="mono">{{ p.realIBAN }} <span class="tag">#{{ p.accountId }}</span></dd>
+      <dt>Bank</dt><dd>{{ p.bank }}</dd>
+      <dt>Customer</dt><dd><a href="{{ url_for('customer_detail', cid=p.customerId) }}">{{ p.customer }}</a></dd>
+    </dl>
+  </div>
+  <div class="card">
+    <strong>Status history</strong> <span class="tag">weak entity · key (paymentId, sequenceNo)</span>
+    <ul class="timeline" style="margin-top:16px">
+      {% for h in history %}
+      <li class="ev-{{ h.status }}"><strong>{{ h.sequenceNo }}. {{ h.status }}</strong>
+        <div class="muted" style="font-size:14px">{{ h.changeTimestamp }}{% if h.reason %} · {{ h.reason }}{% endif %}</div></li>
+      {% endfor %}
+    </ul>
+    <div style="margin-top:18px"><strong>Ledger posting</strong> <span class="tag">1:1 · LedgerEntry.paymentId UNIQUE</span>
+      {% if entry %}<div style="margin-top:8px">Entry #{{ entry.entryId }}: <span class="pill {{ entry.direction }}">{{ entry.direction }}</span>
+        {{ entry.amount|money(p.currency) }} to ledger {{ entry.ledgerId }}</div>
+      {% else %}<div class="muted" style="margin-top:8px">No ledger entry (payment not credited).</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if p.status == 'Received' %}
+<div class="card" style="margin-top:16px">
+  <strong>Process this payment</strong>
+  <p class="muted" style="margin:6px 0 0">Matching runs one transaction: it updates the status, adds history record 2, creates the credit entry and updates the ledger balance.</p>
+  <div class="actions">
+    <form method="post" action="{{ url_for('match_payment', pid=p.paymentId) }}"><button>✓ Match & credit customer</button></form>
+    <form method="post" action="{{ url_for('return_payment', pid=p.paymentId) }}" style="display:flex;gap:8px">
+      <input name="reason" placeholder="Reason for return" size="28"><button class="danger">↩ Return to sender</button></form>
+  </div>
+</div>
+{% elif entry %}
+<div class="card" style="margin-top:16px">
+  <strong>Constraint test</strong>
+  <p class="muted" style="margin:6px 0 0">Try to credit this payment a second time. The UNIQUE constraint on LedgerEntry.paymentId should block it.</p>
+  <div class="actions"><form method="post" action="{{ url_for('double_credit', pid=p.paymentId) }}"><button class="ghost">Try double credit</button></form></div>
+</div>
+{% endif %}
+{% endblock %}

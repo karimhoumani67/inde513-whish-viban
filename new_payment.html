@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% block title %}New payment{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('payments') }}">← Payments</a></p>
+<h1>Record an incoming payment</h1>
+<p class="sub">The payment is saved with status <span class="pill Received">Received</span> and status-history record 1. Then you can match or return it.</p>
+<div class="grid g2">
+<form class="card form" method="post" novalidate>
+  <label>Virtual IBAN <small>(active only)</small></label>
+  <select name="vIbanId" required>
+    {% for v in vibans %}<option value="{{ v.vIbanId }}" {{ 'selected' if form.get('vIbanId')|string == v.vIbanId|string }}>
+      {{ v.vIbanId }} · {{ v.IBAN }} · {{ v.customer }} ({{ v.currency }})</option>{% endfor %}
+  </select>
+  <label>Sender name <small>VARCHAR(100), required</small></label>
+  <input name="senderName" value="{{ form.get('senderName','') }}" placeholder="e.g. Cedar Logistics">
+  <label>Sender note <small>VARCHAR(255), optional</small></label>
+  <input name="senderNote" value="{{ form.get('senderNote','') }}" placeholder="e.g. Invoice 31">
+  <label>Amount <small>&gt; 0, max 2 decimals</small></label>
+  <input name="amount" value="{{ form.get('amount','') }}" placeholder="e.g. 175.50">
+  <div class="actions"><button>Save payment</button></div>
+</form>
+<div class="card">
+  <strong>What the database checks</strong>
+  <ul style="margin:10px 0 0;padding-left:20px;line-height:1.8">
+    <li><span class="mono">amount &gt; 0 AND amount = ROUND(amount, 2)</span></li>
+    <li><span class="mono">length(senderName) BETWEEN 1 AND 100</span></li>
+    <li><span class="mono">FOREIGN KEY (vIbanId) → VirtualIBAN</span></li>
+    <li><span class="mono">status DEFAULT 'Received'</span></li>
+  </ul>
+  <p class="muted" style="font-size:14px">Try <strong>-50</strong>, <strong>12.345</strong> or an empty sender name to see SQLite reject the insert.</p>
+</div>
+</div>
+{% endblock %}

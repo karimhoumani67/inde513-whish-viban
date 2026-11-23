@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Payments{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+  <div><h1>Payments</h1><p class="sub">Search by sender, customer, IBAN or payment ID. Filter by status.</p></div>
+  <a class="btn" href="{{ url_for('new_payment') }}">+ Record incoming payment</a>
+</div>
+<form class="filters" method="get">
+  <input name="q" value="{{ search }}" placeholder="Sender, customer, IBAN or ID…" size="32">
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for s in ['Received','Matched','Returned'] %}<option {{ 'selected' if status==s }}>{{ s }}</option>{% endfor %}
+  </select>
+  <button>Search</button>
+  {% if search or status %}<a class="btn ghost" href="{{ url_for('payments') }}">Clear</a>{% endif %}
+</form>
+<div class="tablewrap"><table>
+  <thead><tr><th>ID</th><th>Sender</th><th>Note</th><th>Virtual IBAN</th><th>Customer</th><th class="num">Amount</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for p in rows %}
+  <tr><td><a href="{{ url_for('payment_detail', pid=p.paymentId) }}"><strong>#{{ p.paymentId }}</strong></a></td>
+    <td>{{ p.senderName }}</td><td class="muted">{{ p.senderNote or '-' }}</td>
+    <td class="mono">{{ p.IBAN }}</td>
+    <td><a href="{{ url_for('customer_detail', cid=p.customerId) }}">{{ p.customer }}</a></td>
+    <td class="num">{{ p.amount|money(p.currency) }}</td>
+    <td><span class="pill {{ p.status }}">{{ p.status }}</span></td></tr>
+  {% else %}<tr><td colspan="7" class="muted">No payments match.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<p class="muted" style="font-size:14px">{{ rows|length }} payment(s)</p>
+<details class="sql"><summary>SQL used on this page</summary><pre>{{ sql }}</pre></details>
+{% endblock %}

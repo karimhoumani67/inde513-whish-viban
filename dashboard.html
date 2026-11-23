@@ -1,0 +1,56 @@
+{% extends "base.html" %}{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Virtual IBAN Payment Tracking</h1>
+<p class="sub">Several customers share one real bank account. Each customer gets a virtual IBAN, so every incoming transfer reaches the right person.</p>
+
+<div class="card">
+  <div class="flow">
+    <div class="step">Sender<small>bank transfer</small></div><div class="arr">→</div>
+    <div class="step">Virtual IBAN<small>identifies the customer</small></div><div class="arr">→</div>
+    <div class="step">Master account<small>pooled real IBAN</small></div><div class="arr">→</div>
+    <div class="step">Status history<small>Received → Matched / Returned</small></div><div class="arr">→</div>
+    <div class="step">Ledger entry<small>credits the customer</small></div>
+  </div>
+</div>
+
+<div class="grid g4" style="margin-top:16px">
+  <a class="card stat" href="{{ url_for('customers') }}"><div class="n">{{ stats.customers }}</div><div class="l">Customers</div></a>
+  <a class="card stat" href="{{ url_for('tables', name='VirtualIBAN') }}"><div class="n">{{ stats.vibans }}</div><div class="l">Active virtual IBANs</div></a>
+  <a class="card stat" href="{{ url_for('tables', name='MasterAccount') }}"><div class="n">{{ stats.accounts }}</div><div class="l">Master accounts</div></a>
+  <a class="card stat" href="{{ url_for('payments') }}"><div class="n">{{ stats.payments }}</div><div class="l">Payments</div></a>
+</div>
+
+<div class="grid g2" style="margin-top:16px">
+  <div class="card">
+    <strong>Payments by status</strong>
+    <div class="grid g3" style="margin-top:12px">
+      {% for s in ['Received','Matched','Returned'] %}
+      <a href="{{ url_for('payments', status=s) }}"><span class="pill {{ s }}">{{ s }}</span>
+        <div style="font-size:26px;font-weight:700;margin-top:4px;color:var(--ink)">{{ by_status.get(s, 0) }}</div></a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <strong>Total credited to customers</strong>
+    {% for r in received %}<div style="font-size:24px;font-weight:700;margin-top:8px">{{ r.total|money(r.currency) }}</div>{% endfor %}
+    <div class="muted" style="font-size:13px">Matched payments only, per currency (USD and LBP are never added together).</div>
+  </div>
+</div>
+
+<h2>Latest activity</h2>
+<div class="tablewrap"><table>
+  <thead><tr><th>Payment</th><th>Sender</th><th>Customer</th><th class="num">Amount</th><th>Status</th><th>Last change</th></tr></thead>
+  <tbody>{% for p in recent %}
+    <tr><td><a href="{{ url_for('payment_detail', pid=p.paymentId) }}">#{{ p.paymentId }}</a></td>
+      <td>{{ p.senderName }}</td><td>{{ p.customer }}</td>
+      <td class="num">{{ p.amount|money(p.currency) }}</td>
+      <td><span class="pill {{ p.status }}">{{ p.status }}</span></td>
+      <td class="muted">{{ p.lastChange }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+
+<form method="post" action="{{ url_for('reset') }}" style="margin-top:22px" onsubmit="return confirm('Reset all data to the original sample records?')">
+  <button class="ghost" type="submit">↺ Reset demo data</button>
+  <span class="muted" style="font-size:13px;margin-left:8px">Rebuilds the database from schema.sql + seed.sql</span>
+</form>
+{% endblock %}

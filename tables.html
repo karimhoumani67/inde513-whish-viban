@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% block title %}Tables · {{ name }}{% endblock %}
+{% block content %}
+<h1>Database tables</h1>
+<p class="sub">All 11 relations of the final normalized schema, with their columns, keys and current rows.</p>
+<div class="layout">
+  <div class="card side">
+    {% for t in tables %}<a href="{{ url_for('tables', name=t) }}" class="{{ 'on' if t==name }}">{{ t }} <span>{{ counts[t] }}</span></a>{% endfor %}
+  </div>
+  <div>
+    <h2 style="margin-top:0">{{ name }} <span class="tag">{{ rows|length }} rows</span></h2>
+    <div class="tablewrap"><table>
+      <thead><tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for r in rows %}<tr>{% for v in r %}<td>{{ 'NULL' if v is none else v }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table></div>
+
+    <h2>Columns</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Default</th><th>Key</th></tr></thead>
+      <tbody>{% for c in info %}
+        {% set fk = fks|selectattr('from','equalto',c.name)|first %}
+        <tr><td><strong>{{ c.name }}</strong></td><td class="mono">{{ c.type }}</td>
+          <td>{{ 'Yes' if c.notnull or c.pk else 'No' }}</td><td class="mono">{{ c.dflt_value or '-' }}</td>
+          <td>{% if c.pk %}<span class="pill Matched">PK</span>{% endif %}
+              {% if fk %}<span class="pill Received">FK → {{ fk.table }}</span>{% endif %}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    <details class="sql" open><summary>CREATE TABLE statement</summary><pre>{{ ddl }}</pre></details>
+  </div>
+</div>
+{% endblock %}

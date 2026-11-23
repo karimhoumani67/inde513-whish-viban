@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block title %}Customers{% endblock %}
+{% block content %}
+<h1>Customers</h1>
+<p class="sub">Search by name or filter by KYC status. Click a customer to see their virtual IBANs, ledgers and payments.</p>
+<form class="filters" method="get">
+  <input name="q" value="{{ search }}" placeholder="Search name…" autofocus>
+  <select name="kyc">
+    <option value="">All KYC statuses</option>
+    {% for s in ['Pending','Verified','Rejected'] %}<option {{ 'selected' if kyc==s }}>{{ s }}</option>{% endfor %}
+  </select>
+  <button>Search</button>
+  {% if search or kyc %}<a class="btn ghost" href="{{ url_for('customers') }}">Clear</a>{% endif %}
+</form>
+<div class="tablewrap"><table>
+  <thead><tr><th>ID</th><th>Name</th><th>KYC status</th><th class="num">Virtual IBANs</th><th class="num">Total balance (derived)</th></tr></thead>
+  <tbody>
+  {% for c in rows %}
+    <tr><td>{{ c.customerId }}</td><td><a href="{{ url_for('customer_detail', cid=c.customerId) }}"><strong>{{ c.name }}</strong></a></td>
+      <td><span class="pill {{ c.kycStatus }}">{{ c.kycStatus }}</span></td>
+      <td class="num">{{ c.numVIbans }}</td>
+      <td class="num">{{ c.totalBalance|money(c.balanceCurrency) }}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">No customers match.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<details class="sql"><summary>SQL used on this page</summary><pre>{{ sql }}</pre></details>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}{% block title %}{{ c.name }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('customers') }}">← Customers</a></p>
+<h1>{{ c.name }} <span class="pill {{ c.kycStatus }}" style="vertical-align:middle">{{ c.kycStatus }}</span></h1>
+<p class="sub">Customer #{{ c.customerId }} · reporting currency {{ c.balanceCurrency }}</p>
+
+<div class="grid g3">
+  <div class="card stat"><div class="l">Total balance (derived)</div>
+    <div class="n">{% if total.t is not none and total.same %}{{ total.t|money(c.balanceCurrency) }}{% elif total.t is none %}-{% else %}Mixed currencies{% endif %}</div>
+    <div class="muted" style="font-size:13px">SUM of ledger balances, not stored</div></div>
+  <div class="card"><div class="l muted">Phone numbers <span class="tag">multivalued</span></div>
+    {% for p in phones %}<div class="mono">{{ p.phoneNumber }}</div>{% else %}<div class="muted">None</div>{% endfor %}</div>
+  <div class="card"><div class="l muted">Email addresses <span class="tag">multivalued</span></div>
+    {% for e in emails %}<div>{{ e.emailAddress }}</div>{% else %}<div class="muted">None</div>{% endfor %}</div>
+</div>
+
+<h2>Associated banks <span class="tag">M:N via CustomerBank</span></h2>
+{% if banks %}<div class="tablewrap"><table><thead><tr><th>Bank</th><th>BIC</th></tr></thead><tbody>
+{% for b in banks %}<tr><td>{{ b.name }}</td><td class="mono">{{ b.bic }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="muted">No bank association yet (optional participation).</p>{% endif %}
+
+<h2>Virtual IBANs <span class="tag">1:M</span></h2>
+{% if vibans %}<div class="tablewrap"><table><thead><tr><th>ID</th><th>Virtual IBAN</th><th>Status</th><th>Assigned</th><th>Routes to (real IBAN)</th><th>Bank</th><th class="num">Payments</th></tr></thead><tbody>
+{% for v in vibans %}<tr><td>{{ v.vIbanId }}</td><td class="mono">{{ v.IBAN }}</td>
+  <td><span class="pill {{ v.status }}">{{ v.status }}</span>{% if v.closureDate %} <span class="muted">{{ v.closureDate }}</span>{% endif %}</td>
+  <td>{{ v.assignmentDate }}</td><td class="mono">{{ v.realIBAN }} <span class="tag">{{ v.currency }}</span></td><td>{{ v.bank }}</td>
+  <td class="num">{{ v.totalNumPayments }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="muted">No virtual IBAN assigned yet (optional participation).</p>{% endif %}
+
+<div class="grid g2">
+<div>
+<h2>Ledger accounts</h2>
+<div class="tablewrap"><table><thead><tr><th>Ledger</th><th>Currency</th><th class="num">Balance</th></tr></thead><tbody>
+{% for l in ledgers %}<tr><td>{{ l.ledgerId }}</td><td>{{ l.currency }}</td><td class="num">{{ l.balance|money(l.currency) }}</td></tr>{% endfor %}
+</tbody></table></div>
+</div>
+<div>
+<h2>Ledger entries</h2>
+{% if entries %}<div class="tablewrap"><table><thead><tr><th>Entry</th><th>Payment</th><th>Direction</th><th class="num">Amount</th></tr></thead><tbody>
+{% for e in entries %}<tr><td>{{ e.entryId }}</td><td><a href="{{ url_for('payment_detail', pid=e.paymentId) }}">#{{ e.paymentId }}</a> {{ e.senderName }}</td>
+<td><span class="pill {{ e.direction }}">{{ e.direction }}</span></td><td class="num">{{ e.amount|money(e.currency) }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="muted">No entries yet.</p>{% endif %}
+</div>
+</div>
+
+<h2>Payments received</h2>
+{% if payments %}<div class="tablewrap"><table><thead><tr><th>Payment</th><th>Sender</th><th>Note</th><th>vIBAN</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>
+{% for p in payments %}<tr><td><a href="{{ url_for('payment_detail', pid=p.paymentId) }}">#{{ p.paymentId }}</a></td><td>{{ p.senderName }}</td>
+<td class="muted">{{ p.senderNote or '-' }}</td><td>{{ p.vIbanId }}</td><td class="num">{{ p.amount|money(p.currency) }}</td>
+<td><span class="pill {{ p.status }}">{{ p.status }}</span></td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="muted">No payments yet.</p>{% endif %}
+{% endblock %}
